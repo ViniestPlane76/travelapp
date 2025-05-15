@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase';
 import {
   doc,
@@ -9,6 +9,7 @@ import {
   where,
   getDocs,
   addDoc,
+  deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 
@@ -19,6 +20,12 @@ function GroupPage() {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
 
+  const fetchPlans = async () => {
+    const q = query(collection(db, 'plans'), where('groupId', '==', id));
+    const snapshot = await getDocs(q);
+    setPlans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
   useEffect(() => {
     const fetchGroup = async () => {
       const docRef = doc(db, 'groups', id);
@@ -26,12 +33,6 @@ function GroupPage() {
       if (docSnap.exists()) {
         setGroup(docSnap.data());
       }
-    };
-
-    const fetchPlans = async () => {
-      const q = query(collection(db, 'plans'), where('groupId', '==', id));
-      const snapshot = await getDocs(q);
-      setPlans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
 
     fetchGroup();
@@ -51,9 +52,25 @@ function GroupPage() {
 
     setNewTitle('');
     setNewDesc('');
-    const q = query(collection(db, 'plans'), where('groupId', '==', id));
-    const snapshot = await getDocs(q);
-    setPlans(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    fetchPlans();
+  };
+
+  const handleDeletePlan = async (planId) => {
+    if (!window.confirm('Czy na pewno chcesz usunąć ten plan i jego notatki?')) return;
+
+    // Usuń notatki
+    const notesQuery = query(collection(db, 'notes'), where('planId', '==', planId));
+    const notesSnapshot = await getDocs(notesQuery);
+    const deleteNotes = notesSnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, 'notes', docSnap.id))
+    );
+
+    await Promise.all(deleteNotes);
+
+    // Usuń plan
+    await deleteDoc(doc(db, 'plans', planId));
+
+    fetchPlans();
   };
 
   if (!group) return <p className="p-4">Ładowanie grupy...</p>;
@@ -61,7 +78,9 @@ function GroupPage() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-blue-600 mb-2">Grupa: {group.name}</h1>
-      <p className="text-gray-500 text-sm mb-6">Utworzona: {new Date(group.createdAt).toLocaleString()}</p>
+      <p className="text-gray-500 text-sm mb-6">
+        Utworzona: {new Date(group.createdAt).toLocaleString()}
+      </p>
 
       <form onSubmit={handleAddPlan} className="mb-6">
         <input
@@ -86,9 +105,20 @@ function GroupPage() {
       <h2 className="text-xl font-semibold mb-2">Plany podróży</h2>
       <ul className="space-y-2">
         {plans.map((plan) => (
-          <li key={plan.id} className="bg-white shadow rounded p-4">
-            <h3 className="text-lg font-bold">{plan.title}</h3>
-            <p className="text-sm text-gray-600">{plan.description}</p>
+          <li key={plan.id} className="bg-white shadow rounded p-4 flex justify-between items-start">
+            <div>
+              <Link to={`/plan/${plan.id}`} className="text-lg font-bold text-blue-600 hover:underline">
+                {plan.title}
+              </Link>
+              <p className="text-sm text-gray-600">{plan.description}</p>
+            </div>
+            <button
+              onClick={() => handleDeletePlan(plan.id)}
+              className="text-red-500 hover:text-red-700 text-sm ml-4"
+              title="Usuń plan"
+            >
+              🗑
+            </button>
           </li>
         ))}
       </ul>
