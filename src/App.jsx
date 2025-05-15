@@ -3,6 +3,9 @@ import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import AuthForm from './components/AuthForm';
 import InstallButton from './components/InstallButton';
+import Dashboard from './pages/Dashboard';
+import GroupPage from './pages/GroupPage';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -13,7 +16,6 @@ function App() {
       setUser(firebaseUser);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -22,25 +24,29 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-blue-100 relative">
-      {user ? (
-        <div className="bg-white shadow-lg rounded-xl p-8 max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-blue-600 mb-4">Planer Podróży</h1>
-          <p className="text-gray-700">Twoja podróż, wspólnie zaplanowana. 🚀</p>
-          <div className="mt-4 text-sm text-gray-500">
-          <p>Zalogowano jako: {user.email}</p>
-            <button
-              className="mt-2 px-4 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              onClick={() => auth.signOut()}
-            >
-              Wyloguj się
-            </button>
-          </div>
-        </div>
-      ) : (
-        <AuthForm />
-      )}
-
+    <div className="min-h-screen bg-blue-100">
+      <Routes>
+        <Route
+          path="/"
+          element={
+            user ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <div className="flex justify-center items-center min-h-screen">
+                <AuthForm />
+              </div>
+            )
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/group/:id"
+          element={user ? <GroupPage /> : <Navigate to="/" />}
+        />
+      </Routes>
       <InstallButton />
     </div>
   );
