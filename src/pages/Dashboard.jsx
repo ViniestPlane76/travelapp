@@ -6,6 +6,8 @@ import {
   where,
   getDocs,
   addDoc,
+  deleteDoc,
+  doc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
@@ -42,19 +44,47 @@ function Dashboard() {
     fetchGroups();
   };
 
+  const handleDeleteGroup = async (groupId) => {
+    if (!window.confirm('Czy na pewno chcesz usunąć tę grupę i wszystkie jej plany?')) return;
+
+    // usuń powiązane plany
+    const plansQuery = query(
+      collection(db, 'plans'),
+      where('groupId', '==', groupId)
+    );
+    const plansSnapshot = await getDocs(plansQuery);
+    const deletePromises = plansSnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, 'plans', docSnap.id))
+    );
+
+    await Promise.all(deletePromises);
+
+    // usuń grupę
+    await deleteDoc(doc(db, 'groups', groupId));
+
+    fetchGroups();
+  };
+
   return (
     <div className="max-w-md mx-auto bg-white p-6 rounded shadow mt-10">
       <h1 className="text-2xl font-bold mb-4">Twoje grupy podróżnicze</h1>
 
       <ul className="divide-y divide-gray-200 mb-4">
         {groups.map((group) => (
-          <li key={group.id} className="py-2">
+          <li key={group.id} className="py-2 flex justify-between items-center">
             <Link
               to={`/group/${group.id}`}
               className="text-blue-600 hover:underline"
             >
               {group.name}
             </Link>
+            <button
+              onClick={() => handleDeleteGroup(group.id)}
+              className="text-red-500 hover:text-red-700 text-sm ml-4"
+              title="Usuń grupę"
+            >
+              🗑
+            </button>
           </li>
         ))}
       </ul>

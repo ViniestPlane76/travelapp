@@ -5,6 +5,7 @@ import AuthForm from './components/AuthForm';
 import InstallButton from './components/InstallButton';
 import Dashboard from './pages/Dashboard';
 import GroupPage from './pages/GroupPage';
+import PlanPage from './pages/PlanPage';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
@@ -45,6 +46,10 @@ function App() {
         <Route
           path="/group/:id"
           element={user ? <GroupPage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/plan/:id"
+          element={user ? <PlanPage /> : <Navigate to="/" />}
         />
       </Routes>
       <InstallButton />
