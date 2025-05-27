@@ -35,9 +35,12 @@ function Dashboard() {
     if (!groupName) return;
 
     await addDoc(collection(db, 'groups'), {
-      name: groupName,
-      members: [auth.currentUser.uid],
-      createdAt: serverTimestamp(),
+        name: groupName,
+        members: [auth.currentUser.uid],
+        memberDetails: {
+          [auth.currentUser.uid]: auth.currentUser.email
+        },
+        createdAt: serverTimestamp(),
     });
 
     setGroupName('');
