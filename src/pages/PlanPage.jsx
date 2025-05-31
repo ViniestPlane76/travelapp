@@ -21,7 +21,6 @@ function PlanPage() {
   const [newNote, setNewNote] = useState('');
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
-
   const [expenses, setExpenses] = useState([]);
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
@@ -29,15 +28,26 @@ function PlanPage() {
   const [splitMode, setSplitMode] = useState('equal');
   const [splits, setSplits] = useState({});
   const [groupMembers, setGroupMembers] = useState([]);
+  const [memberDetails, setMemberDetails] = useState({});
 
   useEffect(() => {
     const fetchPlan = async () => {
       const planRef = doc(db, 'plans', id);
       const planSnap = await getDoc(planRef);
-      if (planSnap.exists()) {
-        const planData = planSnap.data();
-        setPlan(planData);
-        fetchGroup(planData.groupId);
+      if (!planSnap.exists()) return;
+
+      const planData = planSnap.data();
+      setPlan(planData);
+      await fetchGroup(planData.groupId);
+    };
+
+    const fetchGroup = async (groupId) => {
+      const groupRef = doc(db, 'groups', groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data();
+        setGroupMembers(groupData.members || []);
+        setMemberDetails(groupData.memberDetails || {});
       }
     };
 
@@ -55,25 +65,10 @@ function PlanPage() {
       setExpenses(data);
     };
 
-    const fetchGroup = async (groupId) => {
-      const groupRef = doc(db, 'groups', groupId);
-      const groupSnap = await getDoc(groupRef);
-      if (groupSnap.exists()) {
-        setGroupMembers(groupSnap.data().members || []);
-      }
-    };
-
     fetchPlan();
     fetchNotes();
     fetchExpenses();
   }, [id]);
-
-  const fetchNotes = async () => {
-    const q = query(collection(db, 'notes'), where('planId', '==', id));
-    const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setNotes(data);
-  };
 
   const handleAddNote = async (e) => {
     e.preventDefault();
@@ -86,13 +81,18 @@ function PlanPage() {
     });
 
     setNewNote('');
-    fetchNotes();
+    const q = query(collection(db, 'notes'), where('planId', '==', id));
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setNotes(data);
   };
 
   const handleDeleteNote = async (noteId) => {
     if (!window.confirm('Czy na pewno chcesz usunąć tę notatkę?')) return;
     await deleteDoc(doc(db, 'notes', noteId));
-    fetchNotes();
+    const q = query(collection(db, 'notes'), where('planId', '==', id));
+    const snapshot = await getDocs(q);
+    setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleEditNote = (note) => {
@@ -105,7 +105,9 @@ function PlanPage() {
     await updateDoc(doc(db, 'notes', noteId), { content: editingContent });
     setEditingNoteId(null);
     setEditingContent('');
-    fetchNotes();
+    const q = query(collection(db, 'notes'), where('planId', '==', id));
+    const snapshot = await getDocs(q);
+    setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleCancelEdit = () => {
@@ -142,20 +144,17 @@ function PlanPage() {
     setExpenseAmount('');
     setPayer('');
     setSplits({});
-    fetchExpenses();
-  };
-
-  const fetchExpenses = async () => {
     const q = query(collection(db, 'expenses'), where('planId', '==', id));
     const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setExpenses(data);
+    setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleDeleteExpense = async (expenseId) => {
     if (!window.confirm('Usunąć ten wydatek?')) return;
     await deleteDoc(doc(db, 'expenses', expenseId));
-    fetchExpenses();
+    const q = query(collection(db, 'expenses'), where('planId', '==', id));
+    const snapshot = await getDocs(q);
+    setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
   if (!plan) return <p className="p-4">Ładowanie planu...</p>;
@@ -266,7 +265,9 @@ function PlanPage() {
         >
           <option value="">Kto zapłacił?</option>
           {groupMembers.map(uid => (
-            <option key={uid} value={uid}>{uid}</option>
+            <option key={uid} value={uid}>
+              {memberDetails[uid] || uid}
+            </option>
           ))}
         </select>
 
@@ -298,7 +299,7 @@ function PlanPage() {
                 key={uid}
                 type="number"
                 step="0.01"
-                placeholder={`Udział ${uid} (np. 0.5)`}
+                placeholder={`Udział ${memberDetails[uid] || uid} (np. 0.5)`}
                 value={splits[uid] || ''}
                 onChange={(e) =>
                   setSplits({ ...splits, [uid]: parseFloat(e.target.value) || 0 })
@@ -321,12 +322,12 @@ function PlanPage() {
               <div>
                 <p className="font-semibold">{expense.title} – {expense.amount} zł</p>
                 <p className="text-sm text-gray-600">
-                  Zapłacił: {expense.payer}<br />
+                  Zapłacił: {memberDetails[expense.payer] || expense.payer}<br />
                   Podział:
                   <ul className="ml-4 list-disc">
                     {Object.entries(expense.split).map(([uid, share]) => (
                       <li key={uid}>
-                        {uid}: {(share * expense.amount).toFixed(2)} zł ({(share * 100).toFixed(0)}%)
+                        {memberDetails[uid] || uid}: {(share * expense.amount).toFixed(2)} zł ({(share * 100).toFixed(0)}%)
                       </li>
                     ))}
                   </ul>

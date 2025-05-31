@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
+import {
+  doc,
+  setDoc,
+  serverTimestamp
+} from 'firebase/firestore';
 
 function AuthForm() {
   const [email, setEmail] = useState('');
@@ -18,13 +23,20 @@ function AuthForm() {
     setError('');
 
     try {
+      let result;
+
       if (isLogin) {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        setUser(result.user);
+        result = await signInWithEmailAndPassword(auth, email, password);
       } else {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
-        setUser(result.user);
+        result = await createUserWithEmailAndPassword(auth, email, password);
       }
+
+      setUser(result.user);
+
+      await setDoc(doc(db, 'users', result.user.uid), {
+        email: result.user.email,
+        createdAt: serverTimestamp()
+      });
     } catch (err) {
       setError(err.message);
     }
