@@ -2,17 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase';
 import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  serverTimestamp,
-  arrayUnion,
+  doc, getDoc, collection, query, where,
+  getDocs, addDoc, deleteDoc, updateDoc,
+  serverTimestamp, arrayUnion
 } from 'firebase/firestore';
 import GroupChat from '../components/GroupChat';
 
@@ -47,29 +39,24 @@ function GroupPage() {
   const handleAddPlan = async (e) => {
     e.preventDefault();
     if (!newTitle) return;
-
     await addDoc(collection(db, 'plans'), {
       groupId: id,
       title: newTitle,
       description: newDesc,
       createdAt: serverTimestamp(),
     });
-
     setNewTitle('');
     setNewDesc('');
     fetchPlans();
   };
 
   const handleDeletePlan = async (planId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć ten plan i jego notatki?')) return;
-
+    if (!window.confirm('Czy na pewno chcesz usunąć ten plan?')) return;
     const notesQuery = query(collection(db, 'notes'), where('planId', '==', planId));
     const notesSnapshot = await getDocs(notesQuery);
-    const deleteNotes = notesSnapshot.docs.map((docSnap) =>
+    await Promise.all(notesSnapshot.docs.map((docSnap) =>
       deleteDoc(doc(db, 'notes', docSnap.id))
-    );
-
-    await Promise.all(deleteNotes);
+    ));
     await deleteDoc(doc(db, 'plans', planId));
     fetchPlans();
   };
@@ -77,48 +64,40 @@ function GroupPage() {
   const handleInviteUser = async (e) => {
     e.preventDefault();
     setInviteError('');
+    const q = query(collection(db, 'users'), where('email', '==', inviteEmail));
+    const snapshot = await getDocs(q);
 
-    try {
-      const q = query(collection(db, 'users'), where('email', '==', inviteEmail));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        setInviteError('Nie znaleziono użytkownika.');
-        return;
-      }
-
-      const invitedUser = snapshot.docs[0];
-      const invitedUid = invitedUser.id;
-
-      const groupRef = doc(db, 'groups', id);
-      const groupSnap = await getDoc(groupRef);
-      if (!groupSnap.exists()) return;
-
-      const groupData = groupSnap.data();
-      if ((groupData.members || []).includes(invitedUid)) {
-        setInviteError('Użytkownik już należy do grupy.');
-        return;
-      }
-
-      await updateDoc(groupRef, {
-        members: arrayUnion(invitedUid),
-        [`memberDetails.${invitedUid}`]: inviteEmail
-      });
-
-      setInviteEmail('');
-      fetchGroup();
-    } catch (err) {
-      setInviteError('Wystąpił błąd podczas zapraszania.');
-      console.error(err);
+    if (snapshot.empty) {
+      setInviteError('Nie znaleziono użytkownika.');
+      return;
     }
+
+    const invitedUid = snapshot.docs[0].id;
+    const groupRef = doc(db, 'groups', id);
+    const groupSnap = await getDoc(groupRef);
+    if (!groupSnap.exists()) return;
+    const groupData = groupSnap.data();
+
+    if ((groupData.members || []).includes(invitedUid)) {
+      setInviteError('Użytkownik już należy do grupy.');
+      return;
+    }
+
+    await updateDoc(groupRef, {
+      members: arrayUnion(invitedUid),
+      [`memberDetails.${invitedUid}`]: inviteEmail
+    });
+
+    setInviteEmail('');
+    fetchGroup();
   };
 
   if (!group) return <p className="p-4">Ładowanie grupy...</p>;
 
   return (
-    <>
-      {/* Zawartość główna z paddingiem po prawej dla czatu */}
-      <div className="max-w-2xl mx-auto p-6 pr-0 sm:pr-96">
+    <div className="flex flex-col lg:flex-row max-w-7xl mx-auto bg-blue-100 min-h-screen">
+      {/* Lewa kolumna */}
+      <div className="flex-1 p-6">
         <h1 className="text-3xl font-bold text-blue-600 mb-2">Grupa: {group.name}</h1>
         <p className="text-gray-500 text-sm mb-6">
           Utworzona: {group.createdAt?.toDate?.().toLocaleString() || '—'}
@@ -188,9 +167,11 @@ function GroupPage() {
         </ul>
       </div>
 
-      {/* Czat po prawej stronie ekranu */}
-      <GroupChat groupId={id} />
-    </>
+      {/* Prawa kolumna */}
+      <div className="w-full lg:w-[400px] border-l border-gray-300 bg-white shadow-inner p-4">
+        <GroupChat groupId={id} />
+      </div>
+    </div>
   );
 }
 

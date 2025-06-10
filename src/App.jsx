@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import GroupPage from './pages/GroupPage';
 import PlanPage from './pages/PlanPage';
 import LogoutToast from './components/LogoutToast';
+import Header from './components/Header'; // ✅ DODANE
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
       {user && (
         <>
           <LogoutToast visible={showToast} />
+          <Header /> {/* ✅ GLOBALNY PRZYCISK WRÓĆ */}
           <div className="fixed top-4 right-4 flex items-center gap-4 z-50">
             <span className="text-sm text-gray-800 bg-white px-3 py-1 rounded shadow">
               {user.email}

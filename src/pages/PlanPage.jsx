@@ -1,3 +1,4 @@
+// src/pages/PlanPage.jsx
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { db } from '../firebase';
@@ -13,6 +14,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import PlanMap from '../components/PlanMap';
 
 function PlanPage() {
   const { id } = useParams();
@@ -54,15 +56,13 @@ function PlanPage() {
     const fetchNotes = async () => {
       const q = query(collection(db, 'notes'), where('planId', '==', id));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setNotes(data);
+      setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
 
     const fetchExpenses = async () => {
       const q = query(collection(db, 'expenses'), where('planId', '==', id));
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setExpenses(data);
+      setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
 
     fetchPlan();
@@ -83,8 +83,7 @@ function PlanPage() {
     setNewNote('');
     const q = query(collection(db, 'notes'), where('planId', '==', id));
     const snapshot = await getDocs(q);
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setNotes(data);
+    setNotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
   const handleDeleteNote = async (noteId) => {
@@ -164,8 +163,10 @@ function PlanPage() {
       <h1 className="text-3xl font-bold text-blue-600 mb-2">{plan.title}</h1>
       <p className="text-gray-700 mb-4">{plan.description}</p>
 
-      {/* --- Notatki --- */}
-      <form onSubmit={handleAddNote} className="mb-6">
+      <PlanMap planId={id} />
+
+      {/* Notatki */}
+      <form onSubmit={handleAddNote} className="mb-6 mt-10">
         <textarea
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
@@ -236,7 +237,7 @@ function PlanPage() {
         ))}
       </ul>
 
-      {/* --- Budżet --- */}
+      {/* Budżet */}
       <h2 className="text-xl font-semibold mt-8 mb-2">Budżet podróży</h2>
 
       <form onSubmit={handleAddExpense} className="mb-6 space-y-2">
