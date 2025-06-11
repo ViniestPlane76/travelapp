@@ -15,6 +15,11 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import PlanMap from '../components/PlanMap';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid
+} from 'recharts';
+
 
 function PlanPage() {
   const { id } = useParams();
@@ -31,6 +36,7 @@ function PlanPage() {
   const [splits, setSplits] = useState({});
   const [groupMembers, setGroupMembers] = useState([]);
   const [memberDetails, setMemberDetails] = useState({});
+  const [payerTotals, setPayerTotals] = useState([]);
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -69,6 +75,21 @@ function PlanPage() {
     fetchNotes();
     fetchExpenses();
   }, [id]);
+
+  useEffect(() => {
+    const totals = {};
+    expenses.forEach(exp => {
+      if (!totals[exp.payer]) totals[exp.payer] = 0;
+      totals[exp.payer] += exp.amount;
+    });
+
+    const result = Object.entries(totals).map(([uid, total]) => ({
+      name: memberDetails[uid] || uid,
+      value: parseFloat(total.toFixed(2))
+    }));
+
+    setPayerTotals(result);
+  }, [expenses, memberDetails]);
 
   const handleAddNote = async (e) => {
     e.preventDefault();
@@ -344,6 +365,23 @@ function PlanPage() {
           </li>
         ))}
       </ul>
+
+      {payerTotals.length > 0 && (
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold mb-2">Suma wydatków na osobę</h3>
+          <div className="w-full h-64 bg-white rounded shadow p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={payerTotals}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

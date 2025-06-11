@@ -46,19 +46,6 @@
 | Progressive Web App  |                         | Vite Plugin PWA           |
 
 ---
-## 📂 Struktura projektu
-
-public/
-└── icons/, offline.html, favicon.ico
-
-src/
-├── components/ → Reużywalne komponenty (czat, mapa, UI)
-├── pages/ → Widoki: Dashboard, Grupa, Plan
-├── firebase.js → Konfiguracja Firebase
-├── App.jsx → Routing + logika sesji
-├── main.jsx → Punkt startowy React
-
----
 ## 📦 Instalacja lokalna
 
 ### ✅ Wymagania:
