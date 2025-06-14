@@ -1,6 +1,6 @@
-# 🌍 Planer Podróży
+# 🌍 Aplikacja do wspólnego planowania podróży
 
-**Planer Podróży** to progresywna aplikacja webowa (PWA) umożliwiająca grupowe planowanie podróży: wspólne czaty, zarządzanie budżetem, tworzenie planów i lokalizacji, a nawet działanie offline.
+**Aplikacja do wspólnego planowania podróży** to progresywna aplikacja webowa (PWA) umożliwiająca grupowe planowanie podróży: wspólne czaty, zarządzanie budżetem, tworzenie planów i lokalizacji, a nawet działanie offline.
 
 ---
 
