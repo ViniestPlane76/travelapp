@@ -29,10 +29,8 @@
 
 ### 🌐 PWA
 - Instalowalna aplikacja mobilna
-- Tryb offline (Cache + IndexedDB)
 - Dedykowany ekran offline (`offline.html`)
 - Przycisk "Zainstaluj" i podziękowanie po instalacji
-- Przygotowanie pod Web Push API
 
 ---
 
