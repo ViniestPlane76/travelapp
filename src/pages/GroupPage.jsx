@@ -7,6 +7,7 @@ import {
   serverTimestamp, arrayUnion
 } from 'firebase/firestore';
 import GroupChat from '../components/GroupChat';
+import { PlusIcon, UserPlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 function GroupPage() {
   const { id } = useParams();
@@ -95,60 +96,61 @@ function GroupPage() {
   if (!group) return <p className="p-4">Ładowanie grupy...</p>;
 
   return (
-    <div className="flex flex-col lg:flex-row max-w-7xl mx-auto bg-blue-100 min-h-screen">
+    <div className="flex flex-col lg:flex-row max-w-7xl mx-auto gap-6 p-6">
       {/* Lewa kolumna */}
-      <div className="flex-1 p-6">
-        <h1 className="text-3xl font-bold text-blue-600 mb-2">Grupa: {group.name}</h1>
+      <div className="flex-1 bg-white rounded-xl shadow-xl p-6">
+        <h1 className="text-3xl font-bold text-blue-600 mb-1">Grupa: {group.name}</h1>
         <p className="text-gray-500 text-sm mb-6">
           Utworzona: {group.createdAt?.toDate?.().toLocaleString() || '—'}
         </p>
 
-        <form onSubmit={handleAddPlan} className="mb-6">
+        <form onSubmit={handleAddPlan} className="space-y-3 mb-6">
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Nazwa planu"
-            className="border rounded p-2 w-full mb-2"
+            className="w-full border rounded p-2"
             required
           />
           <textarea
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             placeholder="Opis planu (opcjonalnie)"
-            className="border rounded p-2 w-full mb-2"
+            className="w-full border rounded p-2"
           />
-          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Dodaj plan
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
+            <PlusIcon className="w-4 h-4" /> Dodaj plan
           </button>
         </form>
 
-        <form onSubmit={handleInviteUser} className="mb-4 mt-6">
-          <input
-            type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="E-mail użytkownika"
-            className="border rounded p-2 w-full mb-2"
-            required
-          />
-          <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-            Dodaj członka
-          </button>
+        <form onSubmit={handleInviteUser} className="mb-6">          <div className="flex gap-2">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="E-mail użytkownika"
+              className="flex-grow border rounded p-2"
+              required
+            />
+            <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
+              <UserPlusIcon className="w-4 h-4" /> Dodaj członka
+            </button>
+          </div>
           {inviteError && <p className="text-red-500 text-sm mt-2">{inviteError}</p>}
         </form>
 
-        <h3 className="text-lg font-bold mt-8 mb-2">Członkowie grupy</h3>
-        <ul className="list-disc ml-5 text-sm text-gray-700">
+        <h3 className="text-lg font-semibold mb-2">Członkowie grupy</h3>
+        <ul className="list-disc ml-6 text-sm text-gray-700 mb-6">
           {Object.values(group.memberDetails || {}).map((email, idx) => (
             <li key={idx}>{email}</li>
           ))}
         </ul>
 
-        <h2 className="text-xl font-semibold mb-2 mt-8">Plany podróży</h2>
+        <h2 className="text-xl font-semibold mb-3">Plany podróży</h2>
         <ul className="space-y-2">
           {plans.map((plan) => (
-            <li key={plan.id} className="bg-white shadow rounded p-4 flex justify-between items-start">
+            <li key={plan.id} className="bg-gray-50 shadow p-4 rounded flex justify-between items-start">
               <div>
                 <Link to={`/plan/${plan.id}`} className="text-lg font-bold text-blue-600 hover:underline">
                   {plan.title}
@@ -160,7 +162,7 @@ function GroupPage() {
                 className="text-red-500 hover:text-red-700 text-sm ml-4"
                 title="Usuń plan"
               >
-                🗑
+                <TrashIcon className="w-5 h-5" />
               </button>
             </li>
           ))}
@@ -168,7 +170,7 @@ function GroupPage() {
       </div>
 
       {/* Prawa kolumna */}
-      <div className="w-full lg:w-[400px] border-l border-gray-300 bg-white shadow-inner p-4">
+      <div className="w-full lg:w-[420px]">
         <GroupChat groupId={id} />
       </div>
     </div>
